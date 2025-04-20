@@ -13,9 +13,9 @@
   <test_depend>ament_lint_common</test_depend>
 
   <!-- add part start-->
-  <depend>rclcpp</depend>
-  <depend>mavros_msgs</depend>  <!-- 需安装ROS 2版MAVROS -->
-  <depend>geographic_msgs</depend>
+<depend>rclcpp</depend>
+<depend>px4_msgs</depend>
+<depend>geometry_msgs</depend>
   <!-- add part end-->
 
   <export>

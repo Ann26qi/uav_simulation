@@ -1,96 +1,78 @@
-#include <rclcpp/rclcpp.hpp>
-#include <mavros_msgs/msg/waypoint.hpp>
-#include <mavros_msgs/srv/waypoint_push.hpp>
-#include <mavros_msgs/srv/set_mode.hpp>
-#include <mavros_msgs/msg/state.hpp>
-#include <geographic_msgs/msg/geo_point.hpp>
+#include "rclcpp/rclcpp.hpp"
+#include "px4_msgs/msg/trajectory_setpoint.hpp"
+#include "px4_msgs/msg/vehicle_command.hpp"
+#include "geometry_msgs/msg/point.hpp"
 
 using namespace std::chrono_literals;
 
-class MissionControlNode : public rclcpp::Node {
+class TrajectoryNode : public rclcpp::Node {
 public:
-    MissionControlNode() : Node("mission_control_node") {
-        // 初始化客户端和服务
-        wp_push_client_ = this->create_client<mavros_msgs::srv::WaypointPush>("mavros/mission/push");
-        set_mode_client_ = this->create_client<mavros_msgs::srv::SetMode>("mavros/set_mode");
-        
-        // 定义航点（示例为本地坐标系下的NED位置）
-        define_waypoints();
-        
-        // 等待服务可用
-        while (!wp_push_client_->wait_for_service(1s) || !set_mode_client_->wait_for_service(1s)) {
-            RCLCPP_INFO(this->get_logger(), "等待服务...");
-        }
-        
-        // 上传航点并执行任务
-        upload_waypoints();
-        set_mission_mode();
+    TrajectoryNode() : Node("trajectory_node"), current_waypoint_(0) {
+        // 初始化发布器
+        setpoint_publisher_ = this->create_publisher<px4_msgs::msg::TrajectorySetpoint>(
+            "/fmu/in/trajectory_setpoint", 10);
+        command_publisher_ = this->create_publisher<px4_msgs::msg::VehicleCommand>(
+            "/fmu/in/vehicle_command", 10);
+
+        // 定义航点（NED坐标系：下为负）
+        waypoints_ = {
+            {0.0, 0.0, -5.0},
+            {5.0, 0.0, -5.0},
+            {5.0, 5.0, -5.0},
+            {0.0, 5.0, -5.0},
+            {0.0, 0.0, -5.0}
+        };
+
+        // 定时器更新目标点（2秒间隔）
+        timer_ = this->create_wall_timer(
+            2000ms, std::bind(&TrajectoryNode::update_waypoint, this));
+
+        // 切换到Offboard模式
+        switch_to_offboard();
     }
 
 private:
-    void define_waypoints() {
-        // 航点定义（NED坐标系，z向下为负）
-        waypoints_.push_back(create_waypoint(0.0, 0.0, -5.0));  // 起飞点
-        waypoints_.push_back(create_waypoint(5.0, 0.0, -5.0));  // 第一个航点
-        waypoints_.push_back(create_waypoint(5.0, 5.0, -5.0));  // 第二个航点
-        waypoints_.push_back(create_waypoint(0.0, 5.0, -5.0));  // 返回
+    void switch_to_offboard() {
+        auto cmd = px4_msgs::msg::VehicleCommand();
+        cmd.command = px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE;
+        cmd.param1 = 1;  // PX4_CUSTOM_MAIN_MODE_OFFBOARD
+        cmd.target_system = 1;
+        cmd.target_component = 1;
+        command_publisher_->publish(cmd);
+        RCLCPP_INFO(this->get_logger(), "切换到Offboard模式");
     }
 
-    mavros_msgs::msg::Waypoint create_waypoint(float x, float y, float z) {
-        mavros_msgs::msg::Waypoint wp;
-        wp.frame = mavros_msgs::msg::Waypoint::FRAME_LOCAL_NED;
-        wp.command = 16;  // MAV_CMD_NAV_WAYPOINT
-        wp.x_lat = x;
-        wp.y_long = y;
-        wp.z_alt = z;
-        wp.autocontinue = true;
-        wp.is_current = false;
-        return wp;
-    }
-
-    void upload_waypoints() {
-        auto request = std::make_shared<mavros_msgs::srv::WaypointPush::Request>();
-        request->waypoints = waypoints_;
-        
-        auto future = wp_push_client_->async_send_request(request);
-        if (future.wait_for(5s) == std::future_status::ready) {
-            auto response = future.get();
-            if (response->success) {
-                RCLCPP_INFO(this->get_logger(), "航点上传成功，共 %zu 个航点", response->wp_transfered);
-            } else {
-                RCLCPP_ERROR(this->get_logger(), "航点上传失败");
-            }
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "服务调用超时");
+    void update_waypoint() {
+        if (current_waypoint_ >= waypoints_.size()) {
+            current_waypoint_ = 0;
         }
-    }
 
-    void set_mission_mode() {
-        auto request = std::make_shared<mavros_msgs::srv::SetMode::Request>();
-        request->custom_mode = "AUTO.MISSION";
-        
-        auto future = set_mode_client_->async_send_request(request);
-        if (future.wait_for(5s) == std::future_status::ready) {
-            auto response = future.get();
-            if (response->mode_sent) {
-                RCLCPP_INFO(this->get_logger(), "已切换至Mission模式");
-            } else {
-                RCLCPP_ERROR(this->get_logger(), "模式切换失败");
-            }
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "服务调用超时");
-        }
+        auto setpoint = px4_msgs::msg::TrajectorySetpoint();
+        setpoint.position[0] = waypoints_[current_waypoint_][0];
+        setpoint.position[1] = waypoints_[current_waypoint_][1];
+        setpoint.position[2] = waypoints_[current_waypoint_][2];
+        setpoint.yaw = 0.0;  // 偏航角
+
+        setpoint_publisher_->publish(setpoint);
+        RCLCPP_INFO(this->get_logger(), "发布目标点: [%.1f, %.1f, %.1f]", 
+            waypoints_[current_waypoint_][0], 
+            waypoints_[current_waypoint_][1], 
+            waypoints_[current_waypoint_][2]);
+
+        current_waypoint_++;
     }
 
     // 成员变量
-    rclcpp::Client<mavros_msgs::srv::WaypointPush>::SharedPtr wp_push_client_;
-    rclcpp::Client<mavros_msgs::srv::SetMode>::SharedPtr set_mode_client_;
-    std::vector<mavros_msgs::msg::Waypoint> waypoints_;
+    rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr setpoint_publisher_;
+    rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr command_publisher_;
+    rclcpp::TimerBase::SharedPtr timer_;
+    std::vector<std::array<float, 3>> waypoints_;
+    size_t current_waypoint_;
 };
 
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<MissionControlNode>();
+    auto node = std::make_shared<TrajectoryNode>();
     rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;

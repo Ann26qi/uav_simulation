@@ -38,14 +38,17 @@ endif()
 # add part start
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(mavros_msgs REQUIRED)
-find_package(geographic_msgs REQUIRED)
+find_package(px4_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 add_executable(drone_controller src/controller.cpp)
+target_include_directories(drone_controller PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(drone_controller
   rclcpp
-  mavros_msgs
-  geographic_msgs
+  px4_msgs
+  geometry_msgs
 )
 
 install(TARGETS drone_controller
