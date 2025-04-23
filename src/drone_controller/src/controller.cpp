@@ -25,7 +25,7 @@ public:
 
         // 定时器更新目标点（2秒间隔）
         timer_ = this->create_wall_timer(
-            2000ms, std::bind(&TrajectoryNode::update_waypoint, this));
+            10000ms, std::bind(&TrajectoryNode::update_waypoint, this));
 
         // 切换到Offboard模式
         switch_to_offboard();
