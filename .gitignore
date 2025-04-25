@@ -1,4 +1,4 @@
-.vscode
+/.vscode
 
 /build
 
@@ -6,10 +6,6 @@
 
 /log
 
-/px4_msgs
+px4_msgs
 
-/px4_ros_com
-
-
-.vscode/settings.json
-.vscode/settings.json
+px4_ros_com
