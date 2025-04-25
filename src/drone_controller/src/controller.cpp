@@ -47,6 +47,7 @@
  
  #include <chrono>
  #include <iostream>
+
  
  using namespace std::chrono;
  using namespace std::chrono_literals;
@@ -73,6 +74,7 @@
                  // Arm the vehicle
                  this->arm();
              }
+             
  
              // offboard_control_mode needs to be paired with trajectory_setpoint
              publish_offboard_control_mode();
@@ -88,6 +90,12 @@
  
      void arm();
      void disarm();
+     void change_setpoint();
+
+     float x_setpoint = 5.0;
+
+
+
  
  private:
      rclcpp::TimerBase::SharedPtr timer_;
@@ -99,6 +107,9 @@
      std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
  
      uint64_t offboard_setpoint_counter_;   //!< counter for the number of setpoints sent
+
+     std::array<float, 3UL> position_setpoint_ = {0.0, 0.0, -2.5};   //!< position setpoint in NED frame
+     float yaw_setpoint_ = 3.14;   //!< yaw setpoint in radian
  
      void publish_offboard_control_mode();
      void publish_trajectory_setpoint();
@@ -124,6 +135,14 @@
  
      RCLCPP_INFO(this->get_logger(), "Disarm command send");
  }
+
+void OffboardControl::change_setpoint(){
+    
+    this->position_setpoint_[0] = this->x_setpoint;
+    this->x_setpoint = -this->x_setpoint;
+}
+
+
  
  /**
   * @brief Publish the offboard control mode.
@@ -139,6 +158,7 @@
      msg.body_rate = false;
      msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
      offboard_control_mode_publisher_->publish(msg);
+     //std::cout << this->offboard_setpoint_counter_ << std::endl;
  }
  
  /**
@@ -149,10 +169,11 @@
  void OffboardControl::publish_trajectory_setpoint()
  {
      TrajectorySetpoint msg{};
-     msg.position = {0.0, 0.0, -2.5};
-     msg.yaw = -3.14; // [-PI:PI]
+     msg.position = this->position_setpoint_;
+     msg.yaw = this->yaw_setpoint_;
      msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
      trajectory_setpoint_publisher_->publish(msg);
+     this->change_setpoint();
  }
  
  /**
