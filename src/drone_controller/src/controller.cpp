@@ -92,7 +92,7 @@
      void disarm();
      void change_setpoint();
 
-     float x_setpoint = 5.0;
+     float x_setpoint = 0.5;
 
 
 
@@ -151,8 +151,8 @@ void OffboardControl::change_setpoint(){
  void OffboardControl::publish_offboard_control_mode()
  {
      OffboardControlMode msg{};
-     msg.position = true;
-     msg.velocity = false;
+     msg.position = false;
+     msg.velocity = true;
      msg.acceleration = false;
      msg.attitude = false;
      msg.body_rate = false;
@@ -169,7 +169,7 @@ void OffboardControl::change_setpoint(){
  void OffboardControl::publish_trajectory_setpoint()
  {
      TrajectorySetpoint msg{};
-     msg.position = this->position_setpoint_;
+     msg.velocity = this->position_setpoint_;
      msg.yaw = this->yaw_setpoint_;
      msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
      trajectory_setpoint_publisher_->publish(msg);
