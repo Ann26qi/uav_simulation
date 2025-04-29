@@ -79,9 +79,21 @@
              // offboard_control_mode needs to be paired with trajectory_setpoint
              publish_offboard_control_mode();
              publish_trajectory_setpoint();
+
+
+             if (offboard_setpoint_counter_ > 100 && offboard_setpoint_counter_ < 1000) {
+                // change setpoint after 100 counter
+                this->change_setpoint();
+             }
+
+             if (offboard_setpoint_counter_ == 1000){
+                 // land the vehicle after 1000 setpoints
+                 this->land();
+                 this->disarm();
+             }
  
              // stop the counter after reaching 11
-             if (offboard_setpoint_counter_ < 11) {
+             if (offboard_setpoint_counter_ < 10001) {
                  offboard_setpoint_counter_++;
              }
          };
@@ -90,9 +102,14 @@
  
      void arm();
      void disarm();
-     void change_setpoint();
+     
 
-     float x_setpoint = 0.5;
+     void land();
+
+     void change_setpoint();
+     
+
+
 
 
 
@@ -136,10 +153,15 @@
      RCLCPP_INFO(this->get_logger(), "Disarm command send");
  }
 
+ void OffboardControl::land(){
+     publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_LAND);
+     RCLCPP_INFO(this->get_logger(), "Land command send");
+ }
+
+
 void OffboardControl::change_setpoint(){
-    
-    this->position_setpoint_[0] = this->x_setpoint;
-    this->x_setpoint = -this->x_setpoint;
+    this->position_setpoint_[0] = 5 * (cos(3.14 / 30 * offboard_setpoint_counter_ * 0.1)-1);
+    this->position_setpoint_[1] = 5 * sin(3.14 / 30 * offboard_setpoint_counter_ * 0.1);
 }
 
 
@@ -151,8 +173,8 @@ void OffboardControl::change_setpoint(){
  void OffboardControl::publish_offboard_control_mode()
  {
      OffboardControlMode msg{};
-     msg.position = false;
-     msg.velocity = true;
+     msg.position = true;
+     msg.velocity = false;
      msg.acceleration = false;
      msg.attitude = false;
      msg.body_rate = false;
@@ -173,7 +195,6 @@ void OffboardControl::change_setpoint(){
      msg.yaw = this->yaw_setpoint_;
      msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
      trajectory_setpoint_publisher_->publish(msg);
-     this->change_setpoint();
  }
  
  /**
