@@ -1,6 +1,9 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
     "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
         "chrono": "cpp",
         "cctype": "cpp",
         "clocale": "cpp",
@@ -85,7 +88,8 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "netfwd": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/home/aurora/Desktop/uav_simulation/install/local/lib/python3.10/dist-packages",
