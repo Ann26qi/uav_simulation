@@ -21,9 +21,6 @@ public:
   // 更新GNSS数据
   void updateGnss();
 
-  // 判断是否需要对IMU数据内插
-  bool is_toInterpolate();
-
   // 完成一次互补滤波算法，并进行误差反馈
   void fused_gnss_ins();
 }
