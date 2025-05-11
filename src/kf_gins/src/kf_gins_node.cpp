@@ -2,6 +2,9 @@
 #include <px4_msgs/msg/sensor_combined.hpp>
 #include <px4_msgs/msg/sensor_gnss_relative.hpp>
 
+#include <fstream>
+#include <yaml-cpp/yaml.h>
+
 #include "karma_filter.hpp"
 
 
@@ -34,8 +37,12 @@ private:
   rclcpp::Subscription<px4_msgs::msg::SensorCombined>::SharedPtr imu_sub_;
   rclcpp::Subscription<px4_msgs::msg::SensorGnssRelative>::SharedPtr gnss_sub_;
 
+  // 回调函数
   void imuCallback(const px4_msgs::msg::SensorCombined::SharedPtr msg);
   void gnssCallback(const px4_msgs::msg::SensorGnssRelative::SharedPtr msg);
+
+  // 加载配置文件
+  void load_config(const std::string &config_path);
   
   // 滤波器对象
   Filter filter_;
@@ -62,7 +69,9 @@ void kfGnssIns::gnssCallback(const px4_msgs::msg::SensorGnssRelative::SharedPtr 
   // to-do
 }
 
-
+void KfGnssIns::load_config(const std::string &config_path){
+  // to-do
+}
 
 
 
