@@ -49,14 +49,15 @@ void KfGnssIns::imuCallback(const px4_msgs::msg::SensorCombined::SharedPtr msg){
   // 更新IMU数据
   filter_.updateImu();
   // to-do
+  // 完成一次互补滤波，没有GNSS数据就不继续操作
+  filter_.fused_gnss_ins();
 }
 void kfGnssIns::gnssCallback(const px4_msgs::msg::SensorGnssRelative::SharedPtr msg){
   // to-do
 
   // 更新GNSS数据
   filter_.updateGnss();
-  // 完成一次互补滤波
-  filter_.fused_gnss_ins();
+
 
   // to-do
 }
