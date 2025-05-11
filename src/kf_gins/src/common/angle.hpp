@@ -23,6 +23,11 @@
 #ifndef ANGLE_H
 #define ANGLE_H
 
+// 角度和弧度互相转化
+/*
+ * M_PI 是宏定义，3.14159265358979323846
+ * 
+*/
 const double D2R = (M_PI / 180.0);
 const double R2D = (180.0 / M_PI);
 
@@ -44,7 +49,10 @@ public:
     static float deg2rad(float deg) {
         return deg * D2R;
     }
-
+    
+    // 模板函数，用常值引用的方式具有两点作用
+    // 没有重新拷贝一份参数
+    // 在函数运行过程中不会修改传入的参数
     template <typename T, int Rows, int Cols>
     static Eigen::Matrix<T, Rows, Cols> rad2deg(const Eigen::Matrix<T, Rows, Cols> &array) {
         return array * R2D;
