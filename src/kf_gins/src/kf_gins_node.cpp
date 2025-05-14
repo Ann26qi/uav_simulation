@@ -13,8 +13,7 @@
  * 2、GNSS消息和GPS消息似乎不是一个东西，后者可能是紧组合导航所需要的数据
 */
 
-class KfGnssIns : public rclcpp::Node
-{
+class KfGnssIns : public rclcpp::Node{
 public:
   explicit KfGnssIns() : Node("kf_gnss_ins")
   {
@@ -72,11 +71,6 @@ void kfGnssIns::gnssCallback(const px4_msgs::msg::SensorGnssRelative::SharedPtr 
 void KfGnssIns::load_config(const std::string &config_path){
   // to-do
 }
-
-
-
-
-
 
 
 int main(int argc, char *argv[])

@@ -249,10 +249,11 @@ private:
 
     // Kalman滤波相关
     // ekf variables
-    Eigen::MatrixXd Cov_;
-    Eigen::MatrixXd Qc_;
-    Eigen::MatrixXd dx_;
+    Eigen::MatrixXd Cov_;  // 21 * 21
+    Eigen::MatrixXd Qc_;   // 18 * 18
+    Eigen::MatrixXd dx_;   // 21 * 1
 
+    // RANK 阶数，表示状态估计的误差协方差矩阵为21阶矩阵
     const int RANK      = 21;
     const int NOISERANK = 18;
 
