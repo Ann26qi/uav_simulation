@@ -10,11 +10,11 @@
 
 ```bash
 git clone https://github.com/Ann26qi/uav_simulation.git
-cd uav_simulation
+cd uav_simulation/src
 
 git clone https://github.com/PX4/px4_msgs.git
 git clone https://github.com/PX4/px4_ros_com.git
-
+cd ..
 colcon build
 ```
 
